@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { VEHICLES, VEHICLE_ORDER, type VehicleKey } from '@/data/vehicles';
 import { VEHICLE_SVGS } from '@/components/vehicles/VehicleSvgs';
@@ -6,7 +6,7 @@ import { VEHICLE_SVGS } from '@/components/vehicles/VehicleSvgs';
 type Role = 'center' | 'left' | 'right' | 'back';
 
 interface FleetCarouselProps {
-  onSelect: (key: VehicleKey) => void;
+  onSelect: (key: VehicleKey, rect: DOMRect) => void;
 }
 
 export default function FleetCarousel({ onSelect }: FleetCarouselProps) {
@@ -15,6 +15,7 @@ export default function FleetCarousel({ onSelect }: FleetCarouselProps) {
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.innerWidth < 640 : false,
   );
+  const centerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < 640);
@@ -162,10 +163,12 @@ export default function FleetCarousel({ onSelect }: FleetCarouselProps) {
             return (
               <div
                 key={key}
+                ref={isCenter ? centerRef : undefined}
                 style={roleStyle(role)}
-                onClick={() => {
+                onClick={(e) => {
                   if (isCenter) {
-                    onSelect(key);
+                    const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+                    onSelect(key, rect);
                   } else if (!isAnimating) {
                     setActiveIndex(i);
                   }
@@ -236,7 +239,10 @@ export default function FleetCarousel({ onSelect }: FleetCarouselProps) {
         <a
           onClick={(e) => {
             e.preventDefault();
-            onSelect(VEHICLE_ORDER[activeIndex]);
+            const rect =
+              centerRef.current?.getBoundingClientRect() ??
+              new DOMRect(window.innerWidth / 2 - 1, window.innerHeight / 2 - 1, 2, 2);
+            onSelect(VEHICLE_ORDER[activeIndex], rect);
           }}
           href="#"
           className="absolute bottom-6 right-4 sm:bottom-20 sm:right-10 flex items-center font-display text-white uppercase no-underline hover:opacity-100 transition-opacity duration-200"

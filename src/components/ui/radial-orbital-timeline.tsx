@@ -173,7 +173,7 @@ export default function RadialOrbitalTimeline({
 
             const nodeStyle: React.CSSProperties = {
               transform: `translate(${position.x}px, ${position.y}px)`,
-              zIndex: isExpanded ? 200 : position.zIndex,
+              zIndex: isExpanded ? 60 : position.zIndex,
               opacity: isExpanded ? 1 : position.opacity,
             };
 
@@ -222,98 +222,137 @@ export default function RadialOrbitalTimeline({
                 >
                   {item.title}
                 </div>
-
-                {isExpanded && (
-                  <Card
-                    className="absolute top-20 left-1/2 -translate-x-1/2 w-[300px] sm:w-[360px] bg-[#0A0F1C]/95 backdrop-blur-lg border-white/15 shadow-2xl overflow-visible"
-                    style={{ boxShadow: `0 8px 40px ${accent}22, 0 0 0 1px rgba(255,255,255,0.06)` }}
-                  >
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-px h-3 bg-white/30" />
-                    <CardHeader className="pb-2">
-                      <div className="flex justify-between items-center">
-                        <Badge
-                          className={getStatusStyles(item.status)}
-                          style={
-                            item.status !== 'pending'
-                              ? { backgroundColor: accent, color: '#070A12' }
-                              : undefined
-                          }
-                        >
-                          {item.status === 'completed'
-                            ? 'COMPLETE'
-                            : item.status === 'in-progress'
-                              ? 'IN PROGRESS'
-                              : 'PENDING'}
-                        </Badge>
-                        <span className="text-[10px] font-mono text-white/40">{item.date}</span>
-                      </div>
-                      <CardTitle className="text-sm mt-2 text-white font-body font-semibold">
-                        {item.title}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-xs text-white/75 space-y-3">
-                      <p>{item.content}</p>
-
-                      <NodeDetailBody nodeId={item.id} detail={item.detail} accent={accent} />
-
-                      <div className="pt-3 border-t border-white/10">
-                        <div className="flex justify-between items-center text-xs mb-1">
-                          <span className="flex items-center text-white/60">
-                            <Zap size={10} className="mr-1" />
-                            Priority Signal
-                          </span>
-                          <span className="font-mono text-white/70">{item.energy}%</span>
-                        </div>
-                        <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
-                          <div
-                            className="h-full rounded-full"
-                            style={{ width: `${item.energy}%`, backgroundColor: accent }}
-                          />
-                        </div>
-                      </div>
-
-                      {item.relatedIds.length > 0 && (
-                        <div className="pt-3 border-t border-white/10">
-                          <div className="flex items-center mb-2">
-                            <LinkIcon size={10} className="text-white/50 mr-1" />
-                            <h4 className="text-[10px] uppercase tracking-wider font-medium text-white/50">
-                              Next in sequence
-                            </h4>
-                          </div>
-                          <div className="flex flex-wrap gap-1">
-                            {item.relatedIds.map((relatedId) => {
-                              const relatedItem = timelineData.find((i) => i.id === relatedId);
-                              return (
-                                <Button
-                                  key={relatedId}
-                                  variant="outline"
-                                  size="sm"
-                                  className="flex items-center h-6 px-2 py-0 text-xs rounded-none border-white/15 bg-transparent hover:bg-white/10 text-white/75 hover:text-white transition-all"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleItem(relatedId);
-                                  }}
-                                >
-                                  {relatedItem?.title}
-                                  <ArrowRight size={8} className="ml-1 text-white/50" />
-                                </Button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
               </div>
             );
           })}
         </div>
       </div>
 
-      <div className="absolute bottom-5 left-0 right-0 text-center text-[10px] sm:text-xs uppercase tracking-[0.2em] text-white/30 font-mono z-40">
-        Tap a node to inspect &middot; tap empty space to release
-      </div>
+      {/* Dimming scrim behind the expanded card, so the ring doesn't visually
+          compete with the open card's content */}
+      {activeNodeId !== null && (
+        <div
+          className="absolute inset-0 z-[110] bg-[#03050d]/70 backdrop-blur-sm transition-opacity duration-300"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (activeNodeId !== null) toggleItem(activeNodeId);
+          }}
+        />
+      )}
+
+      {/* Expanded detail card — rendered once, centered over the whole orbit,
+          so it never competes for space with neighbouring nodes regardless
+          of where on the ring the active node currently sits. */}
+      {activeNodeId !== null &&
+        (() => {
+          const item = timelineData.find((i) => i.id === activeNodeId);
+          if (!item) return null;
+          const Icon = item.icon;
+          return (
+            <div
+              className="absolute inset-0 flex items-center justify-center z-[120] pointer-events-none px-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Card
+                className="animate-card-in pointer-events-auto w-full max-w-[380px] bg-[#0A0F1C]/97 backdrop-blur-lg border-white/15 shadow-2xl"
+                style={{ boxShadow: `0 12px 60px ${accent}28, 0 0 0 1px rgba(255,255,255,0.07)` }}
+              >
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-7 h-7 rounded-full flex items-center justify-center"
+                        style={{ backgroundColor: accent, color: '#070A12' }}
+                      >
+                        <Icon size={14} />
+                      </div>
+                      <Badge
+                        className={getStatusStyles(item.status)}
+                        style={
+                          item.status !== 'pending'
+                            ? { backgroundColor: accent, color: '#070A12' }
+                            : undefined
+                        }
+                      >
+                        {item.status === 'completed'
+                          ? 'COMPLETE'
+                          : item.status === 'in-progress'
+                            ? 'IN PROGRESS'
+                            : 'PENDING'}
+                      </Badge>
+                    </div>
+                    <span className="text-[10px] font-mono text-white/40">{item.date}</span>
+                  </div>
+                  <CardTitle className="text-base mt-2 text-white font-body font-semibold">
+                    {item.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="text-xs text-white/75 space-y-3 max-h-[55vh] overflow-y-auto">
+                  <p>{item.content}</p>
+
+                  <NodeDetailBody nodeId={item.id} detail={item.detail} accent={accent} />
+
+                  <div className="pt-3 border-t border-white/10">
+                    <div className="flex justify-between items-center text-xs mb-1">
+                      <span className="flex items-center text-white/60">
+                        <Zap size={10} className="mr-1" />
+                        Priority Signal
+                      </span>
+                      <span className="font-mono text-white/70">{item.energy}%</span>
+                    </div>
+                    <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{ width: `${item.energy}%`, backgroundColor: accent }}
+                      />
+                    </div>
+                  </div>
+
+                  {item.relatedIds.length > 0 && (
+                    <div className="pt-3 border-t border-white/10">
+                      <div className="flex items-center mb-2">
+                        <LinkIcon size={10} className="text-white/50 mr-1" />
+                        <h4 className="text-[10px] uppercase tracking-wider font-medium text-white/50">
+                          Next in sequence
+                        </h4>
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {item.relatedIds.map((relatedId) => {
+                          const relatedItem = timelineData.find((i) => i.id === relatedId);
+                          return (
+                            <Button
+                              key={relatedId}
+                              variant="outline"
+                              size="sm"
+                              className="flex items-center h-6 px-2 py-0 text-xs rounded-none border-white/15 bg-transparent hover:bg-white/10 text-white/75 hover:text-white transition-all"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleItem(relatedId);
+                              }}
+                            >
+                              {relatedItem?.title}
+                              <ArrowRight size={8} className="ml-1 text-white/50" />
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleItem(item.id);
+                    }}
+                    className="w-full mt-2 text-[10px] uppercase tracking-widest text-white/40 hover:text-white/70 transition-colors text-center"
+                  >
+                    Close
+                  </button>
+                </CardContent>
+              </Card>
+            </div>
+          );
+        })()}
     </div>
   );
 }
