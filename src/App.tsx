@@ -3,6 +3,7 @@ import FleetCarousel from '@/components/FleetCarousel';
 import RadialOrbitalTimeline from '@/components/ui/radial-orbital-timeline';
 import { VEHICLES, buildOrbitalData, type VehicleKey } from '@/data/vehicles';
 import { VEHICLE_SVGS } from '@/components/vehicles/VehicleSvgs';
+import { useLiveVehicleData, isLiveDataConfigured } from '@/data/liveData';
 
 type Phase = 'carousel' | 'zooming-in' | 'orbital' | 'zooming-out';
 
@@ -17,6 +18,8 @@ export default function App() {
 
   const vehicle = selected ? VEHICLES[selected] : null;
   const SvgComp = selected ? VEHICLE_SVGS[selected] : null;
+  const isOrbitalActive = phase === 'orbital' || phase === 'zooming-out';
+  const liveData = useLiveVehicleData(selected ?? 'bus', Boolean(selected) && isOrbitalActive);
 
   const handleSelect = (key: VehicleKey, rect: DOMRect) => {
     setSelected(key);
@@ -90,8 +93,9 @@ export default function App() {
         >
           <RadialOrbitalTimeline
             vehicle={vehicle}
-            timelineData={buildOrbitalData(vehicle)}
+            timelineData={buildOrbitalData(vehicle, liveData)}
             onClose={handleClose}
+            isLive={isLiveDataConfigured()}
           />
         </div>
       )}

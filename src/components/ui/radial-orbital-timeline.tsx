@@ -10,12 +10,17 @@ interface RadialOrbitalTimelineProps {
   vehicle: VehicleConfig;
   timelineData: OrbitalNode[];
   onClose: () => void;
+  /** Whether region-team data (Google Sheet) is wired up. Shown as a small
+   *  badge in the header so it's obvious whether you're looking at live
+   *  operational data or the hardcoded sample data. */
+  isLive?: boolean;
 }
 
 export default function RadialOrbitalTimeline({
   vehicle,
   timelineData,
   onClose,
+  isLive = false,
 }: RadialOrbitalTimelineProps) {
   const [expandedItems, setExpandedItems] = useState<Record<number, boolean>>({});
   const [rotationAngle, setRotationAngle] = useState<number>(0);
@@ -134,6 +139,18 @@ export default function RadialOrbitalTimeline({
           </span>
           <span className="font-mono text-[10px] sm:text-xs text-white/40 uppercase tracking-widest">
             {vehicle.model}
+          </span>
+          <span
+            className={`hidden sm:inline-flex items-center gap-1 text-[9px] font-mono uppercase tracking-widest px-2 py-0.5 rounded-full border ${
+              isLive
+                ? 'text-emerald-300 border-emerald-400/30 bg-emerald-400/10'
+                : 'text-white/35 border-white/15 bg-white/5'
+            }`}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${isLive ? 'bg-emerald-300 animate-pulse-slow' : 'bg-white/30'}`}
+            />
+            {isLive ? 'Live region data' : 'Sample data'}
           </span>
         </div>
         <button

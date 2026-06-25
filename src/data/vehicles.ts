@@ -101,12 +101,42 @@ export const VEHICLES: Record<VehicleKey, VehicleConfig> = {
 
 export const VEHICLE_ORDER: VehicleKey[] = ['bus', 'auto', 'pickup', 'truck'];
 
+/** Shape of the live overrides fetched from the regional team's Google Sheet.
+ *  Any field left undefined falls back to the hardcoded sample data below —
+ *  this keeps the app fully functional even before the sheet is wired up. */
+export interface LiveVehicleData {
+  regionalSpread?: { region: string; count: number }[];
+  highlights?: { label: string; value: string }[];
+  issues?: {
+    id: string;
+    title: string;
+    severity: 'Minor' | 'Critical';
+    status: 'Resolved' | 'In Progress';
+    desc: string;
+    action: string;
+  }[];
+  training?: {
+    sessions: { label: string; date: string }[];
+    stats: { label: string; value: string }[];
+  };
+}
+
 /**
  * Builds the 5-node orbital ring for a vehicle:
  * Description -> Regional Spread -> Highlights -> Issues & Actions -> Training & Glimpses
  * Connected sequentially since this *is* a real reviewing sequence (spec sheet flow).
+ *
+ * `live`, when provided, overrides the 4 region-editable sections with data
+ * fetched from the team's Google Sheet (see src/data/liveData.ts). Vehicle
+ * Description always comes from the hardcoded VEHICLES config, since specs
+ * rarely change and aren't regional input.
  */
-export function buildOrbitalData(vehicle: VehicleConfig): OrbitalNode[] {
+export function buildOrbitalData(vehicle: VehicleConfig, live?: LiveVehicleData): OrbitalNode[] {
+  const spread = live?.regionalSpread ?? regionalSpread(vehicle.key);
+  const hl = live?.highlights ?? highlights(vehicle.key);
+  const issues = live?.issues ?? issuesAndActions(vehicle.key);
+  const training = live?.training ?? trainingGlimpses(vehicle.key);
+
   return [
     {
       id: 1,
@@ -123,55 +153,57 @@ export function buildOrbitalData(vehicle: VehicleConfig): OrbitalNode[] {
     {
       id: 2,
       title: 'Regional Spread',
-      date: 'Q1 2025',
+      date: 'Live',
       category: 'Deployment',
       icon: MapPin,
       relatedIds: [1, 3],
       status: 'completed',
       energy: 85,
       content: 'Active deployment footprint across operating regions.',
-      detail: regionalSpread(vehicle.key),
+      detail: spread,
     },
     {
       id: 3,
       title: 'Highlights',
-      date: 'Rolling',
+      date: 'Live',
       category: 'Performance',
       icon: Star,
       relatedIds: [2, 4],
       status: 'in-progress',
       energy: 70,
       content: 'Standout performance metrics for this vehicle line.',
-      detail: highlights(vehicle.key),
+      detail: hl,
     },
     {
       id: 4,
       title: 'Issues & Actions',
-      date: 'Tracked',
+      date: 'Live',
       category: 'Quality',
       icon: Wrench,
       relatedIds: [3, 5],
       status: 'in-progress',
       energy: 55,
       content: 'Open and resolved field issues with corrective actions.',
-      detail: issuesAndActions(vehicle.key),
+      detail: issues,
     },
     {
       id: 5,
       title: 'Training & Glimpses',
-      date: 'Ongoing',
+      date: 'Live',
       category: 'Enablement',
       icon: GraduationCap,
       relatedIds: [4],
       status: 'pending',
       energy: 40,
       content: 'Driver and technician training sessions for this fleet.',
-      detail: trainingGlimpses(vehicle.key),
+      detail: training,
     },
   ];
 }
 
 // ---- Per-vehicle structured payloads -------------------------------------
+// These are the fallback/sample values, used until the Google Sheet is
+// configured (or if a fetch fails). See docs/REGION_DATA_SETUP.md.
 
 function regionalSpread(key: VehicleKey) {
   const map: Record<VehicleKey, { region: string; count: number }[]> = {

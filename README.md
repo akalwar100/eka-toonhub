@@ -90,7 +90,32 @@ To add a 5th vehicle, add an entry to `VEHICLES`, add an SVG to
 functions in `vehicles.ts` (`regionalSpread`, `highlights`,
 `issuesAndActions`, `trainingGlimpses`) with that vehicle's key.
 
-## Notes on a known environment limitation
+## Region team data input (live data)
+
+The Description/specs are hardcoded (they rarely change). But **Regional
+Spread, Highlights, Issues & Actions, and Training** can be edited live by
+non-technical regional teams through a Google Sheet — no code, no deploys.
+
+Full setup walkthrough: [`docs/REGION_DATA_SETUP.md`](docs/REGION_DATA_SETUP.md).
+Apps Script to paste into the sheet: [`docs/apps-script.gs`](docs/apps-script.gs).
+
+Quick version:
+1. Create a Google Sheet with 4 tabs (`RegionalSpread`, `Highlights`,
+   `Issues`, `Training`) following the column layout in the setup doc.
+2. Paste `docs/apps-script.gs` into the sheet's Apps Script editor and
+   deploy it as a Web App — this turns the sheet into a JSON API, free,
+   no server needed.
+3. Copy `.env.example` to `.env` and set `VITE_SHEET_API_URL` to the
+   deployed Web App URL.
+4. Run the app. A green **"Live region data"** badge appears in each
+   vehicle's orbital header when it's pulling from the sheet; otherwise it
+   shows **"Sample data"** and nothing breaks.
+
+The app polls the sheet every 60 seconds while a vehicle's orbital view is
+open (see `POLL_INTERVAL_MS` in `src/data/liveData.ts`), and refetches
+immediately each time a vehicle is opened.
+
+
 
 This project's dependencies could not be installed or build-verified in the
 sandbox used to generate it (no npm registry access). Every file was
