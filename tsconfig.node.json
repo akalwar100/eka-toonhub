@@ -1,0 +1,5 @@
+# Copy this file to `.env` and fill in your published Apps Script URL.
+# See docs/REGION_DATA_SETUP.md for how to get this URL.
+# If left unset, the app runs fine on hardcoded sample data.
+
+VITE_SHEET_API_URL=
